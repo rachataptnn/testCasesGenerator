@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Request Form</title>
+    <!-- Load the Monaco Editor library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.22.0/min/vs/loader.js"></script>
+    <style>
+        /* Style for the editor container */
+        #editor-container {
+            height: 450px;
+            border: 1px solid #ccc;
+        }
+        input {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Request Form</h1>
+    <form id="apiRequestForm">
+        <label for="urlInput">URL:</label>
+        <input type="text" id="urlInput" name="url" placeholder="Enter URL">
+        <button type="submit">Submit</button>
+    </form>
+    <div id="response">
+        <!-- API response will be displayed here -->
+    </div>
+    <div id="editor-container">
+        <!-- Monaco Editor will be displayed here -->
+    </div>
+    <script>
+        document.getElementById("apiRequestForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const url = document.getElementById("urlInput").value;
+            if (url) {
+                const payload = JSON.stringify({ "url": url });
+                fetch("http://localhost:8080/gen-testcases", {
+                    method: "POST",
+                    body: payload,
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("response").textContent = JSON.stringify(data, null, 2);
+                    
+                    // Initialize the Monaco Editor after the library is loaded
+                    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.22.0/min/vs' } });
+                    require(['vs/editor/editor.main'], function() {
+                        monaco.editor.create(document.getElementById("editor-container"), {
+                            value: data.testCases,
+                            language: "go"
+                        });
+                    });
+                })
+                .catch(error => {
+                    document.getElementById("response").textContent = "Error: " + error;
+                });
+            }
+        });
+    </script>
+</body>
+</html>

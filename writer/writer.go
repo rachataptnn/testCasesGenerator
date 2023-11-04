@@ -45,7 +45,7 @@ func MakeTestcases(examples, funcName string) string {
 	wholeScript := fmt.Sprintf(wholeScript, innetScript)
 	writeStringToFile("main_test.go", wholeScript)
 
-	return ""
+	return wholeScript
 }
 
 func removeEmptyStr(examples string) []string {

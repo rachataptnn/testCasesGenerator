@@ -70,20 +70,22 @@ func grabFunctionName(content string) string {
 	// find go {} first
 	goIndex := strings.Index(content, "{\"lang\":\"Go\",\"langSlug\":\"golang\"")
 	slice1 := content[goIndex:]
-
-	// limit by }
-	endBracketIndex := strings.Index(slice1, "}")
-	slice2 := slice1[:endBracketIndex]
+	goOnly := strings.Split(slice1, "},{")[0]
 
 	// there are two 'func' so i choose \nfunc
-	secondFuncIndex := strings.Index(slice2, "\\nfunc")
-	slice3 := slice2[secondFuncIndex:]
-
+	secondFuncIndex := strings.Index(goOnly, "\\nfunc")
+	slice2 := ""
+	if secondFuncIndex >= 0 {
+		slice2 = goOnly[secondFuncIndex:]
+	} else {
+		secondFuncIndex := strings.Index(goOnly, "\"func")
+		slice2 = goOnly[secondFuncIndex:]
+	}
 	// want only function name
-	startBracketIndex := strings.Index(slice3, "(")
-	slice4 := slice3[:startBracketIndex]
+	startBracketIndex := strings.Index(slice2, "(")
+	slice3 := slice2[:startBracketIndex]
 
-	funcName := strings.Split(slice4, " ")[1]
+	funcName := strings.Split(slice3, " ")[1]
 
 	return funcName
 }
