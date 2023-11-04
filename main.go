@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"testcases-gen/handler"
 
@@ -23,7 +24,12 @@ func main() {
 	})
 	e.POST("/gen-testcases", handler.GenTestcasesHandler)
 
-	e.Start(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
+	e.Start(":" + port)
 }
 
 // just dummy
