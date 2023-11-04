@@ -3,42 +3,47 @@ package writer
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
 const (
 	wholeScript = `package main
 
-	import (
-		"reflect"
-		"testing"
-	)
+import (
+	"reflect"
+	"testing"
+)
 	
-	func TestFunc(t *testing.T) {
+func TestFunc(t *testing.T) {
+	%v
+}`
+
+	testStructPart = `type testStruct struct {
 		%v
 	}`
 
-	testStructPart = `	type testStruct struct {
-		%v
-	}`
-
-	arrayPart = `	testcases := []testStruct{
+	testArrayPart = `	testcases := []testStruct{
 		%v
 	}`
 
 	loopPart = `	for _, tc := range testcases {
-		actual := leetcodefuncName(tc.n, tc.pick)
+		actual := leetcodefuncName(%v)
 		if !reflect.DeepEqual(actual, tc.Output) {
 			t.Errorf("Expected %v, but got %v", tc.Output, actual)
 		}
 	}`
+	// need to grab leetcodefuncName from web content
 )
 
 func MakeTestcases(examples string) string {
 	theCoolestArr := removeEmptyStr(examples)
-	theText := createTestStruct(theCoolestArr)
+	structText, loopText := createTestStruct(theCoolestArr)
+	arrText := createTestArr(theCoolestArr)
 
-	writeStringToFile("main_test.go", theText)
+	innetScript := structText + "\n\n" + arrText + "\n\n" + loopText
+	wholeScript := fmt.Sprintf(wholeScript, innetScript)
+	writeStringToFile("result.txt", wholeScript)
 
 	return ""
 }
@@ -56,15 +61,76 @@ func removeEmptyStr(examples string) []string {
 	return noEmptyArr
 }
 
-func createTestStruct(arr []string) string {
-	theText := ""
+func createTestStruct(arr []string) (string, string) {
+	stuctText := ""
+	fieldsForStruct := ""
+	limiter := 1
+	functionInput := ""
+
 	for _, v := range arr {
 		isExample := strings.Index(v, "Example")
-		if isExample > 0 {
+		if isExample >= 0 {
+			if limiter == 0 {
+				break
+			}
 			continue
 		}
-		theText += v + "\n"
+		isInput := strings.Index(v, "Input")
+		if isInput >= 0 {
+			parts := strings.Split(v, ",")
+			for _, v := range parts {
+				parts := strings.Split(v, " ")
+				fieldName := parts[1]
+				fieldValue := parts[len(parts)-1]
+				fieldType := determineType(fieldValue)
+				fieldsForStruct += fieldName + " " + fieldType + "\n\t\t"
+				functionInput += "tc." + fieldName + ", "
+			}
+		}
+		isOutput := strings.Index(v, "Output")
+		if isOutput >= 0 {
+			limiter -= 1
+			parts := strings.Split(v, " ")
+			fieldName := "Output"
+			fieldValue := parts[len(parts)-1]
+			fieldType := determineType(fieldValue)
+			fieldsForStruct += fieldName + " " + fieldType
+		}
 	}
+	stuctText += fmt.Sprintf(testStructPart, fieldsForStruct)
+	loopText := fmt.Sprintf(loopPart, functionInput)
+	return stuctText, loopText
+}
+
+func createTestArr(arr []string) string {
+	theText := ""
+	fieldsForArr := ""
+	for _, v := range arr {
+		isExample := strings.Index(v, "Example")
+		if isExample >= 0 {
+			fieldsForArr += "{\n\t\t"
+			continue
+		}
+		isInput := strings.Index(v, "Input")
+		if isInput >= 0 {
+			parts := strings.Split(v, ",")
+			for _, v := range parts {
+				parts := strings.Split(v, " ")
+				fieldName := parts[1]
+				fieldValue := parts[len(parts)-1]
+				fieldsForArr += "\t" + fieldName + ": " + fieldValue + ",\n\t\t"
+			}
+		}
+		isOutput := strings.Index(v, "Output")
+		if isOutput >= 0 {
+			parts := strings.Split(v, " ")
+			fieldName := "Output"
+			fieldValue := parts[len(parts)-1]
+			fieldsForArr += "\t" + fieldName + ": " + fieldValue + ",\n\t\t},\n\t\t"
+		}
+	}
+	theText += fmt.Sprintf(testArrayPart, fieldsForArr)
+
 	fmt.Println(theText)
 	return theText
 }
@@ -76,4 +142,24 @@ func writeStringToFile(filename, data string) error {
 		return err
 	}
 	return nil
+}
+
+func determineType(value string) string {
+	// Attempt to parse the value as a bool
+	if _, err := strconv.ParseBool(value); err == nil {
+		return "bool"
+	}
+
+	// Attempt to parse the value as an int
+	if _, err := strconv.Atoi(value); err == nil {
+		return "int"
+	}
+
+	// Attempt to parse the value as a float64
+	if _, err := strconv.ParseFloat(value, 64); err == nil {
+		return "float64"
+	}
+
+	// If none of the above types can be parsed, consider it a string
+	return "string"
 }
