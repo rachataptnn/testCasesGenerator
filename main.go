@@ -24,4 +24,4 @@ func main() {
 }
 
 // just dummy
-func leetcodefuncName(int, int) int { return 0 }
+func guessNumber(int, int) int { return 0 }

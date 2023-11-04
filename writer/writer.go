@@ -28,22 +28,22 @@ func TestFunc(t *testing.T) {
 	}`
 
 	loopPart = `	for _, tc := range testcases {
-		actual := leetcodefuncName(%v)
+		actual := %v(%v)
 		if !reflect.DeepEqual(actual, tc.Output) {
-			t.Errorf("Expected %v, but got %v", tc.Output, actual)
+			t.Errorf("Expected %%v, but got %%v", tc.Output, actual)
 		}
 	}`
 	// need to grab leetcodefuncName from web content
 )
 
-func MakeTestcases(examples string) string {
+func MakeTestcases(examples, funcName string) string {
 	theCoolestArr := removeEmptyStr(examples)
-	structText, loopText := createTestStruct(theCoolestArr)
+	structText, loopText := createTestStruct(theCoolestArr, funcName)
 	arrText := createTestArr(theCoolestArr)
 
 	innetScript := structText + "\n\n" + arrText + "\n\n" + loopText
 	wholeScript := fmt.Sprintf(wholeScript, innetScript)
-	writeStringToFile("result.txt", wholeScript)
+	writeStringToFile("main_test.go", wholeScript)
 
 	return ""
 }
@@ -61,7 +61,7 @@ func removeEmptyStr(examples string) []string {
 	return noEmptyArr
 }
 
-func createTestStruct(arr []string) (string, string) {
+func createTestStruct(arr []string, funcName string) (string, string) {
 	stuctText := ""
 	fieldsForStruct := ""
 	limiter := 1
@@ -98,7 +98,7 @@ func createTestStruct(arr []string) (string, string) {
 		}
 	}
 	stuctText += fmt.Sprintf(testStructPart, fieldsForStruct)
-	loopText := fmt.Sprintf(loopPart, functionInput)
+	loopText := fmt.Sprintf(loopPart, funcName, functionInput)
 	return stuctText, loopText
 }
 

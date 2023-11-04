@@ -33,11 +33,11 @@ func GenTestcasesHandler(c echo.Context) error {
 }
 
 func generateTestcases(req GenTestcasesRequest) (GenTestcasesResponse, error) {
-	exampleArr, err := grabing.GrabExamples(req.URL)
+	exampleArr, funcName, err := grabing.GrabExamples(req.URL)
 	if err != nil {
 		return GenTestcasesResponse{}, err
 	}
-	script := writer.MakeTestcases(exampleArr)
+	script := writer.MakeTestcases(exampleArr, funcName)
 
 	response := GenTestcasesResponse{
 		IsOk:      req.IsOk,

@@ -8,24 +8,24 @@ import (
 	"strings"
 )
 
-func GrabExamples(url string) (string, error) {
+func GrabExamples(url string) (string, string, error) {
 	content, err := grabWholePageContent(url)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
+	funcName := grabFunctionName(content)
 	problemDesc := grabProblemDesc(content)
 
 	parts := strings.Split(problemDesc, "\u00a0")
 	if len(parts) > 1 {
 		examples := parts[1]
-		return examples, nil
+		return examples, funcName, nil
 	}
 
-	return "", errors.New("parts length incorrect")
+	return "", "", errors.New("parts length incorrect")
 }
 
 func grabWholePageContent(url string) (string, error) {
-	// url = "https://leetcode.com/problems/guess-number-higher-or-lower/description/?fbclid=IwAR1d9rN7CE8dHbgoJKm7rOanvl8jX45NHV7jv7sj1OHXOf6RzCftXwZZBwg"
 	content, err := fetchURLContents(url)
 	if err != nil {
 		return "", err
@@ -34,8 +34,7 @@ func grabWholePageContent(url string) (string, error) {
 }
 
 func grabProblemDesc(content string) string {
-	searchString := "<meta name=\"description\""
-	descriptionStartIndex := strings.Index(content, searchString)
+	descriptionStartIndex := strings.Index(content, "<meta name=\"description\"")
 
 	if descriptionStartIndex >= 0 {
 		choppedContent := content[descriptionStartIndex:]
@@ -65,4 +64,26 @@ func fetchURLContents(url string) (string, error) {
 	content := string(body)
 
 	return content, nil
+}
+
+func grabFunctionName(content string) string {
+	// find go {} first
+	goIndex := strings.Index(content, "{\"lang\":\"Go\",\"langSlug\":\"golang\"")
+	slice1 := content[goIndex:]
+
+	// limit by }
+	endBracketIndex := strings.Index(slice1, "}")
+	slice2 := slice1[:endBracketIndex]
+
+	// there are two 'func' so i choose \nfunc
+	secondFuncIndex := strings.Index(slice2, "\\nfunc")
+	slice3 := slice2[secondFuncIndex:]
+
+	// want only function name
+	startBracketIndex := strings.Index(slice3, "(")
+	slice4 := slice3[:startBracketIndex]
+
+	funcName := strings.Split(slice4, " ")[1]
+
+	return funcName
 }
