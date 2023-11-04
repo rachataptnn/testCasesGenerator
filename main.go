@@ -18,6 +18,9 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "hi this is route '/' of my testcase gen")
+	})
 	e.POST("/gen-testcases", handler.GenTestcasesHandler)
 
 	e.Start(":8080")
